@@ -1,3 +1,5 @@
 /output
 __pycache__/
+sweep_tign.py
+config/
 *.csv
