@@ -1,13 +1,48 @@
+import numpy as np
 from numpy import array
+from dataclasses import dataclass, field
 
 from sim.dynamics import rk4_step
 
-def simulate(b, gd, env, X0, t_max, dt):
+@dataclass
+class simData:
+    time_history: list[float] = field(default_factory=list)
+    X_history: list[np.ndarray] = field(default_factory=list)
+    throttle_history: list[float] = field(default_factory=list)
+    shutdown_reason: str = ""
+    
+    # Interpolate to find exact time of touchdown (z=0)
+    def interpolate_touchdown(self):
+        z = self.X_history[:, 2]
+        
+        #Check if there is enough data to interpolate
+        if z[-1] > 0:
+            return None
+        if len(z) < 2:
+            return self.time_history[-1], self.X_history[-1]
+        
+        z0, z1 = z[-2], z[-1]
+        
+        # Fraction of time where z crossed 0
+        s = z0 / (z0-z1)
+        
+        # Interpolate to find actual touchdown time and vehicle state
+        t_td = self.time_history[-2] + s * (self.time_history[-1] - self.time_history[-2])
+        X_td = self.X_history[-2] + s * (self.X_history[-1] - self.X_history[-2])
+        
+        # remove rounding residue
+        X_td[2] = 0.0                
+        return t_td, X_td
+
+'''
+    Function runs simulation loop. Tracks time - guidance and booster can shorten timestep if needed.
+    
+    Simulation state saved to simData object
+''' 
+
+def simulate(b, gd, sd, env, X0, t_max, dt):
     # Time in seconds
     t = 0
-
-    # Pre-allocate lists to store simulation data
-    time_history, X_history, throttle_history = [], [], []
 
     # Initialize the state vector
     X = X0.copy()
@@ -16,14 +51,14 @@ def simulate(b, gd, env, X0, t_max, dt):
     while t < t_max and X[2] > 0:
 
         # Store simulation data
-        time_history.append(t)
-        X_history.append(X.copy())
+        sd.time_history.append(t)
+        sd.X_history.append(X.copy())
 
         # Guidance logic to determine throttle setting and direction
         u = gd.command(t, X, b)
         
         # Store throttle setting for this step
-        throttle_history.append(u[0]) 
+        sd.throttle_history.append(u[0]) 
         
         ## Time control
         # Don't step past ignition
@@ -41,24 +76,10 @@ def simulate(b, gd, env, X0, t_max, dt):
         t += step
         
     # Save final state to history
-    time_history.append(t)
-    X_history.append(X.copy())
-    throttle_history.append(0.0)
-    X_history = array(X_history)
+    sd.time_history.append(t)
+    sd.X_history.append(X.copy())
+    sd.throttle_history.append(0.0)
+    sd.X_history = array(sd.X_history)
 
-    return time_history, X_history, throttle_history
 
-# Interpolate to find the exact time of touchdown (z=0)
-def interpolate_touchdown(t_hist, X_hist):
-    z = X_hist[:, 2]
-    if z[-1] > 0: # Not enough data to interpolate
-        return None  
-    if len(z) < 2:  # Not enough data to interpolate; started at or aboce ground
-        return t_hist[-1], X_hist[-1]
-    z0, z1 = z[-2], z[-1]
-    s = z0 / (z0 - z1)  # Fraction of the last time step where z crossed zero
-    t_td = t_hist[-2] + s * (t_hist[-1] - t_hist[-2])
-    X_td = X_hist[-2] + s * (X_hist[-1] - X_hist[-2])
-    X_td[2] = 0.0                 # remove rounding residue
-    return t_td, X_td
 
