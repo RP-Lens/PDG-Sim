@@ -13,7 +13,7 @@ from sim.setup import parse
 if __name__ == "__main__":
     
     # Parse TOML file & initialise simulation parameters
-    path="./config/test_cases/freefall_vac_3k.toml"
+    path="./config/test_cases/mars_lander_convex.toml"
     b, gd, env, X0, dt = parse(path)
     sd = simData()
 
@@ -42,10 +42,10 @@ if __name__ == "__main__":
     speed = linalg.norm(X_history[:, 3:6], axis=1)
     data = column_stack([time_history, X_history, speed, throttle_history])
     header = "t_s,x_m,y_m,z_m,vx_mps,vy_mps,vz_mps,m_kg,speed_mps,throttle"
-    np.savetxt("output/freefall_vac_3k.csv", data, delimiter=",",
+    np.savetxt("output/mars_lander_convex.csv", data, delimiter=",",
         header=header, comments="", fmt="%.6f")
     
-    d = np.genfromtxt("output/freefall_vac_3k.csv", delimiter=",", names=True)
+    d = np.genfromtxt("output/mars_lander_convex.csv", delimiter=",", names=True)
     t = d["t_s"]
 
     fig, (ax1, ax3) = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
@@ -84,5 +84,5 @@ if __name__ == "__main__":
             ax.axvline(t_td, color="k", lw=0.8, ls="--")
 
     fig.tight_layout()
-    fig.savefig("output/freefall_vac_3k.png", dpi=200)
+    fig.savefig("output/mars_lander_convex.png", dpi=200)
     plt.show()

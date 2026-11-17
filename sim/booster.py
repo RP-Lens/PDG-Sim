@@ -1,4 +1,6 @@
 # Class to keep track of booster specs
+# Also holds the engine model
+
 from dataclasses import dataclass
 import numpy as np
 from numpy import column_stack, pi, linalg, array
@@ -13,6 +15,7 @@ class Booster:
     Cd: float         # Booster drag coefficient
     A_ref: float      # Reference area of booster, m^2 
     eta_min: float    # Minimum throttle setting (0.0 to 1.0)
+    eta_max: float    # Maximum throttle setting (0.0 to 1.0)
     
     # Method to calculate thrust at a given throttle value and altitude
     def thrust(self, throttle, p_atm) -> float:   

@@ -1,3 +1,9 @@
+'''
+Script to parse config file and build booser, guidance and environment objects.
+Also returns initial state vector and timestep for simulation.
+'''
+
+
 import tomllib, pprint
 from numpy import array
 
@@ -17,15 +23,19 @@ def parse(path):
         m_prop=cfg["booster"]["propellant"],
         mdot_max=cfg["booster"]["mdot_max"],
         T_vac=cfg["booster"]["T_vac"],
-        A_e=cfg["booster"]["A_e"],
         Cd=cfg["booster"]["Cd"],
         A_ref=cfg["booster"]["A_ref"],
-        eta_min=cfg["booster"]["eta_min"]
+        A_e=cfg["booster"]["A_e"],
+        eta_min=cfg["booster"]["eta_min"],
+        eta_max=cfg["booster"]["eta_max"]
     )
     
     # TODO: error-catching for guidance type
     gd = Guidance(
-        t_ign=cfg["guidance"]["t_ign"]
+        t_ign=cfg["guidance"]["t_ign"],
+        guidance_type=cfg["guidance"]["type"],
+        eta_min=b.eta_min,
+        eta_max=b.eta_max
     )
     env = Environment(
         g=cfg["environment"]["g"],
@@ -35,7 +45,7 @@ def parse(path):
     # Take intial pos, vel & total mass and return state vector
     X0 = array([
         cfg["initial"]["position"][0], cfg["initial"]["position"][1], cfg["initial"]["position"][2],
-        cfg["initial"]["velocity"][0], cfg["initial"]["velocity"][1],cfg["initial"]["velocity"][2],
+        cfg["initial"]["velocity"][0], cfg["initial"]["velocity"][1], cfg["initial"]["velocity"][2],
         b.m_dry + b.m_prop
     ])
     

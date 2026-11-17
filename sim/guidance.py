@@ -1,3 +1,7 @@
+'''
+Returns a (throttle, direction) command every timestep.
+'''
+
 from dataclasses import dataclass
 import numpy as np
 
@@ -7,18 +11,21 @@ IGN_TOL = 1e-9  # Ignition timing tolerance
 @dataclass
 class Guidance:
     t_ign: float
-    throttle_cmd: float = 1.0
-    phase: str = "coast"          # "coast" -> "burn" -> "off"
+    eta_min: float
+    eta_max: float
+    guidance_type: str
+    phase: str = "coast"            # "coast" -> "burn" -> "off"
     shutdown_reason: str = ""
+    throttle_cmd: float = 1.0
 
-    # Use to determine exact throttle timestep to ignite throttle
+    # TODO: Perhaps needs updated with new algorithm to determine exact throttle timestep to ignite throttle
     def max_step(self, t, X, b, dt):
         if self.phase == "coast" and t < self.t_ign - IGN_TOL:
             # Shorten timestep to ignite throttle if timestep bigger than time to ignition
             return min(dt, self.t_ign - t)
         return dt
 
-    def command(self, t, X, b):
+    def fixed_burn_command(self, t, X, b):
         v, m = X[3:6], X[6]
 
         speed = np.linalg.norm(v)
@@ -41,3 +48,8 @@ class Guidance:
         # Only burn if in the burn phase
         throttle = self.throttle_cmd if self.phase == "burn" else 0.0
         return throttle, u_hat
+    
+    def convex_trajectory(self, t, X, b):
+        v, m = X[3:6], X[6]
+        
+        

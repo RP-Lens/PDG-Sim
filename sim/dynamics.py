@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class Environment:
     g: float  # m/s^2
-    model: str  # Atmosphere model: 'ISA' or 'vacuum'
+    model: str  # Atmosphere model: 'ISA', 'vacuum' or 'constant'
 
 
 # Function to calculate atmospheric pressure and density at a given altitude
@@ -17,7 +17,10 @@ def atm(h, env):
             h = max(h, 0.0)  # Count negative altitudes as sea level
             p_atm = 101325 * (1 - 2.25577e-5 * h) ** 5.25588
             rho_atm = 1.225 * (1 - 2.25577e-5 * h) ** 4.25588
-    else:        
+    elif env.model == 'constant':
+        p_atm = 101325
+        rho_atm = 1.225
+    else:
         p_atm, rho_atm = 0.0, 0.0
     return p_atm, rho_atm
 

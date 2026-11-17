@@ -34,19 +34,19 @@ class simData:
         X_td[2] = 0.0                
         return t_td, X_td
 
+
 '''
     Function runs simulation loop. Tracks time - guidance and booster can shorten timestep if needed.
     
     Simulation state saved to simData object
 ''' 
-
 def simulate(b, gd, sd, env, X0, t_max, dt):
     # Time in seconds
     t = 0
 
     # Initialize the state vector
     X = X0.copy()
-
+        
     ## Main simulation loop; while the time is less than the maximum time and the altitude is greater than zero
     while t < t_max and X[2] > 0:
 
@@ -55,8 +55,13 @@ def simulate(b, gd, sd, env, X0, t_max, dt):
         sd.X_history.append(X.copy())
 
         # Guidance logic to determine throttle setting and direction
-        u = gd.command(t, X, b)
-        
+        if gd.guidance_type == "fixed_burn":
+            u = gd.fixed_burn_command(t, X, b)
+        elif gd.guidance_type == "convex":
+            u = gd.convex_command(t, X, b)
+        else:
+            raise ValueError("Guidance type not recognised: " + gd.guidance_type)
+
         # Store throttle setting for this step
         sd.throttle_history.append(u[0]) 
         
